@@ -81,15 +81,19 @@ try {
     # โหลด C# Injector เข้า PowerShell
     Add-Type -TypeDefinition $injectorCode -Language CSharp
 
-    # ปิด notepad.exe ที่เปิดอยู่ทั้งหมดก่อน (ถ้ามี)
-    Get-Process -Name "notepad" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Milliseconds 300
+    # ถ้า notepad.exe เปิดอยู่แล้ว → ปิดก่อน แล้วค่อยเปิดใหม่
+    # ถ้า notepad.exe ยังไม่ได้เปิด → เปิดเลย
+    $notepad = Get-Process -Name "notepad" -ErrorAction SilentlyContinue
+    if ($notepad) {
+        $notepad | Stop-Process -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Milliseconds 300
+    }
 
-    # เปิด notepad.exe ใหม่เสมอ แล้วรอให้พร้อม
+    # เปิด notepad.exe แล้วรอให้โหลดจนพร้อม
     Start-Process "notepad.exe"
     Start-Sleep -Milliseconds 800
 
-    # Inject DLL เข้าไปใน notepad.exe ที่เพิ่งเปิด
+    # Inject DLL เข้าไปใน notepad.exe
     $notepad = Get-Process -Name "notepad" -ErrorAction SilentlyContinue
     if ($notepad) {
         [DllInjector]::Inject($notepad.Id, $dllPath) | Out-Null
